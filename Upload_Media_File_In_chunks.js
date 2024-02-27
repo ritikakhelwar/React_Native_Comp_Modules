@@ -8,7 +8,15 @@ import {TUS_URL} from '../../config/urls';
 interface ReelsTabProps {}
 
 const ReelsTab: React.FC<ReelsTabProps> = () => {
-// while uploading from ios device or android device using cameraRoll library
+
+//----------------> video uri for local videos using cameraRoll 
+/*
+const appleId = currentImage?.image?.uri?.substring(5, 41);
+  const ext = currentImage?.image?.extension;
+  const uri = `assets-library://asset/asset.${ext}?id=${appleId}&ext=${ext}`;
+*/
+
+//----------------> while uploading from ios device or android device using cameraRoll library
 
   /*if (Platform.OS === 'ios') {
           CameraRoll.iosGetImageDataById(currentImage?.image?.uri)
@@ -27,7 +35,7 @@ const ReelsTab: React.FC<ReelsTabProps> = () => {
           uploadMediaInChunks({...currentImage, uri: currentImage?.image?.uri});
         }*/
 
-// upload function parameters while uploading using cameraRoll on ios and adnroid
+//--------------> upload function parameters while uploading using cameraRoll on ios and adnroid
 /*
 export const uploadMediaInChunks = (value, apiPayload) => {
   return new Promise((resolve, reject) => {
