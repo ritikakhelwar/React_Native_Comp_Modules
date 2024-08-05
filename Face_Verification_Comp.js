@@ -1,3 +1,14 @@
+// if (!!verifyFaceModal) {
+  //   return (
+  //     <FaceVerificationComp
+  //       faceVerifiedSuccess={cb => {
+  //         setIsFaceVerified(cb);
+  //         setVerifyFaceModal(false);
+  //       }}
+  //     />
+  //   );
+  // }
+
 import {
   View,
   Text,
