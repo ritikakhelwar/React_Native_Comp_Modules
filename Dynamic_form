@@ -1,0 +1,304 @@
+import moment from "moment";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  FlatList,
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  Text,
+  Image,
+  ScrollView,
+  Button,
+} from "react-native";
+import { useDarkMode } from "react-native-dark-mode";
+import DatePicker from "react-native-date-picker";
+import { useSelector } from "react-redux";
+import Header from "../../Components/Header";
+import { loaderOne } from "../../Components/Loaders/AnimatedLoaderFiles";
+import TextInputWithHeader from "../../Components/TextInputWithHeader";
+import UploadImage from "../../Components/UploadImage";
+import WrapperContainer from "../../Components/WrapperContainer";
+import imagePath from "../../constants/imagePath";
+import actions from "../../redux/actions";
+import colors from "../../styles/colors";
+import fontFamily from "../../styles/fontFamily";
+import { moderateScale, textScale, width } from "../../styles/responsiveSize";
+import { MyDarkTheme } from "../../styles/theme";
+import {
+  selectSingleImageFromCamera,
+  selectSingleImageFromGallery,
+} from "../../utils/helperFunctions";
+import DateAndTimeModal from "../SendProduct/DateAndTimeModal";
+
+const SafetyForm = ({ navigation, route }) => {
+  const prevScreen = route?.params?.prevScreen;
+
+  const theme = useSelector((state) => state?.initBoot?.themeColor);
+  const toggleTheme = useSelector((state) => state?.initBoot?.themeToggle);
+  const darkthemeusingDevice = useDarkMode();
+  const isDarkMode = toggleTheme ? darkthemeusingDevice : theme;
+  const [isLoading, setIsLoading] = useState(false);
+  const [date, setDate] = useState(new Date());
+  const [open, setOpen] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [image, setImage] = useState("");
+  const [submitData, setSubmitData] = useState([]);
+  const { appData, themeColors, appStyle, currencies, languages } = useSelector(
+    (state) => state?.initBoot
+  );
+
+  useEffect(() => {
+    _setSubmitData();
+  }, []);
+
+  const _setSubmitData = () => {
+    let arr = prevScreen.map((val) => {
+      let item = {};
+      let label = val?.label.toLowerCase();
+      item[label] = "";
+      console.log(item, "item ========>>>>>>>>>>>>.");
+      return { ...item };
+    });
+    console.log("newarrarararararara", arr);
+    setSubmitData(arr);
+  };
+
+  const _takePhotoFromCamera = (val1, item, index) => {
+    selectSingleImageFromCamera().then((pic) => {
+      setModalVisible(false);
+      _uploadImage(pic, val1, item, index);
+      console.log(pic, "picpicpicpicpic");
+    });
+  };
+
+  const _takePhotoFromGallery = (val1, item, index) => {
+    selectSingleImageFromGallery().then((pic) => {
+      setModalVisible(false);
+      _uploadImage(pic, val1, item, index);
+      console.log(pic, "picpicpicpicpic");
+    });
+  };
+
+  const _uploadImage = async (pic, val1, item, index) => {
+    // setLoading(true);
+    console.log(
+      "inUploadFuncioninUploadFuncioninUploadFuncioninUploadFuncion",
+      pic
+    );
+    const formImage = new FormData();
+
+    formImage.append("file", {
+      uri: pic.path,
+      name: "image.jpeg",
+      // mime: "filename",
+      type: pic.mime ? pic.mime : "image/png",
+    });
+    console.log(formImage, "formImageformImage");
+
+    actions
+      .uploadSafetyImage(formImage, {
+        code: appData?.profile?.code,
+        "Content-Type": "multipart/form-data",
+      })
+      .then((res) => {
+        console.log(res, "profileImageUploadApi");
+        setModalVisible(false);
+        setImage(res?.data);
+        callChangeText(res?.data, item, index);
+        // setLoading(false);
+        // setProfilePicture(res?.data[0]?.orig_path);
+      })
+      .catch((error) => {
+        console.log(error, "try catch error");
+        showError(error?.message);
+        setModalVisible(false);
+      });
+  };
+
+  const textInputRef = useRef();
+
+  const [formData, setFormData] = useState([]);
+
+  const callChangeText = (text, item, index) => {
+    let label = item?.label.toLowerCase();
+    let obj = {};
+    obj[label] = text;
+    let temp_arr = submitData.map((val, ind) => {
+      if (ind === index) {
+        return { ...val, ...obj };
+      } else {
+        return val;
+      }
+    });
+    setSubmitData(temp_arr);
+    console.log(temp_arr, "temp array ========>>>>>>>>>>");
+  };
+
+  const _onPressSubmit = () => {
+    
+  }
+
+  const _renderForm = ({ item, index }) => {
+    return (
+      <>
+        <View style={{ paddingVertical: moderateScale(8) }}>
+          {item?.type == "text" && (
+            <TextInputWithHeader
+              textInputRef={textInputRef}
+              headerText={item?.label}
+              keyboardType={
+                item?.subtype == "tel"
+                  ? "phone-pad"
+                  : item?.subtype == "email"
+                  ? "email-address"
+                  : "default"
+              }
+              placeholder={item?.placeholder}
+              estric={item?.required ? true : false}
+              onChangeText={(text) => callChangeText(text, item, index)}
+            />
+          )}
+        </View>
+        {item?.type == "textarea" && (
+          <TextInputWithHeader
+            headerText={item?.label}
+            multiline={true}
+            placeholder={item?.placeholder}
+            estric={item?.required ? true : false}
+            onChangeText={(text) => callChangeText(text, item, index)}
+          />
+        )}
+        {item?.type == "date" && (
+          <>
+            <TextInputWithHeader
+              headerText={item?.label}
+              editable={false}
+              onPress={() => setOpen(true)}
+              value={moment(date).format("YYYY-MM-DD")}
+              placeholder={item?.placeholder}
+              estric={item?.required ? true : false}
+              // onChangeText={(text) => callChangeText(text, item, index)}
+            />
+            <DatePicker
+              modal
+              open={open}
+              date={date}
+              onConfirm={(date) => {
+                setOpen(false);
+                setDate(date);
+                callChangeText(moment(date).format("YYYY-MM-DD"), item, index);
+              }}
+              onCancel={() => {
+                setOpen(false);
+              }}
+            />
+          </>
+        )}
+        <View>
+          {item?.type == "file" && (
+            <UploadImage
+              onPressCamera={() => _takePhotoFromCamera(null, item, index)}
+              onPressUpload={() => setModalVisible(true)}
+              onPressCancel={() => setModalVisible(false)}
+              onPressGallery={() => _takePhotoFromGallery(null, item, index)}
+              isModalVisible={isModalVisible}
+              imageUrl={image}
+              headerText={item?.label}
+              estric={item?.required ? true : false}
+            />
+          )}
+        </View>
+      </>
+    );
+  };
+
+  return (
+    <WrapperContainer
+      bgColor={isDarkMode ? MyDarkTheme.colors.background : colors.white}
+      statusBarColor={colors.white}
+      source={loaderOne}
+      isLoadingB={isLoading}
+    >
+      <Header
+        leftIcon={
+          appStyle?.homePageLayout === 2
+            ? imagePath.backArrow
+            : appStyle?.homePageLayout === 3 || appStyle?.homePageLayout === 5
+            ? imagePath.icBackb
+            : imagePath.back
+        }
+        centerTitle={"Safety Report Form"}
+        headerStyle={
+          isDarkMode
+            ? { backgroundColor: MyDarkTheme.colors.background }
+            : { backgroundColor: colors.white }
+        }
+      />
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 150 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View
+          style={{
+            paddingHorizontal: moderateScale(16),
+            marginTop: moderateScale(8),
+          }}
+        >
+          <FlatList
+            data={prevScreen}
+            showsVerticalScrollIndicator={false}
+            renderItem={_renderForm}
+            ListFooterComponent={
+              <View style={{ marginBottom: moderateScale(0) }} />
+            }
+          />
+          <TouchableOpacity style={styles.cont1} activeOpacity={0.5}>
+            <View style={styles.btn}>
+              <Text
+                style={{
+                  ...styles.textStyle,
+                  color: colors.white,
+                }}
+              >
+                Submit
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </WrapperContainer>
+  );
+};
+
+export default SafetyForm;
+
+const styles = StyleSheet.create({
+  cont1: { alignItems: "center", marginTop: moderateScale(32) },
+  cont2: {
+    backgroundColor: "transparent",
+    paddingVertical: moderateScale(12),
+    paddingHorizontal: moderateScale(16),
+    borderRadius: moderateScale(16),
+    borderWidth: 1.5,
+  },
+  btn: {
+    backgroundColor: colors.themeColor,
+    paddingVertical: moderateScale(16),
+    paddingHorizontal: moderateScale(16),
+    borderRadius: moderateScale(16),
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: width / 2,
+  },
+  imgStyle: {
+    tintColor: colors.white,
+    marginStart: moderateScale(10),
+    marginTop: moderateScale(2),
+  },
+  textStyle: {
+    fontSize: textScale(18),
+    fontFamily: fontFamily.regular,
+    textAlign: "justify",
+  },
+});
